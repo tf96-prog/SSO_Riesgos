@@ -1,0 +1,5 @@
+# Ignorar dependencias de ambas carpetas
+**/node_modules/
+**/dist/
+**/.env
+**/.expo/
