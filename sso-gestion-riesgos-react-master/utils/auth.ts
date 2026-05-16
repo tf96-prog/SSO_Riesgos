@@ -13,7 +13,13 @@ export async function iniciarSesion(
     const usuario = await apiPost<Usuario>("/auth/login", { correo, password });
 
     if (usuario) {
-      await AsyncStorage.setItem(USUARIO_ACTUAL_KEY, JSON.stringify(usuario));
+      const data = JSON.stringify(usuario);
+
+      if (Platform.OS === "web") {
+        localStorage.setItem(USUARIO_ACTUAL_KEY, data);
+      } else {
+        await AsyncStorage.setItem(USUARIO_ACTUAL_KEY, data);
+      }
       return usuario;
     }
     return null;
@@ -25,12 +31,14 @@ export async function iniciarSesion(
 
 export async function obtenerUsuarioActual(): Promise<Usuario | null> {
   try {
+    let data: string | null = null;
+
     if (Platform.OS === "web") {
-      const data = localStorage.getItem(USUARIO_ACTUAL_KEY);
-      return data ? JSON.parse(data) : null;
+      data = localStorage.getItem(USUARIO_ACTUAL_KEY);
+    } else {
+      data = await AsyncStorage.getItem(USUARIO_ACTUAL_KEY);
     }
 
-    const data = await AsyncStorage.getItem(USUARIO_ACTUAL_KEY);
     return data ? JSON.parse(data) : null;
   } catch (error) {
     console.log("Error al obtener usuario actual:", error);
@@ -42,10 +50,10 @@ export async function cerrarSesion() {
   try {
     if (Platform.OS === "web") {
       localStorage.removeItem(USUARIO_ACTUAL_KEY);
-      return;
+    } else {
+      await AsyncStorage.removeItem(USUARIO_ACTUAL_KEY);
     }
-
-    await AsyncStorage.removeItem(USUARIO_ACTUAL_KEY);
+    console.log("Sesión cerrada localmente");
   } catch (error) {
     console.log("Error al cerrar sesión:", error);
   }

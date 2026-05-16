@@ -7,36 +7,46 @@ app.use(cors());
 app.use(express.json());
 app.use(cors());
 
+
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'sso_db', 
-  password: '12345',
-  port: 5432,
+  connectionString: 'postgresql://postgres:12345@localhost:5432/sso_db'
 });
+
+pool.query('SELECT current_database(), current_user')
+  .then(res => {
+    console.log("¡POR FIN! Node.js se conectó a:", res.rows[0].current_database);
+    console.log("Usuario actual en Node:", res.rows[0].current_user);
+  })
+  .catch(err => {
+    console.error("ERROR CRÍTICO DE CONEXIÓN:", err.message);
+  });
 
 app.listen(8001, () => console.log('¡SERVIDOR ACTUALIZADO EN PUERTO 8001!'));
 
 app.post('/v1/auth/login', async (req, res) => {
   const { correo, password } = req.body;
 
-  try {
-    const query = `
-      SELECT u.id_usuario as id, u.nombre, u.apellido, u.correo, r.nombre as rol 
-      FROM Usuario u
-      JOIN Rol r ON u.id_rol = r.id_rol
-      WHERE u.correo = $1 AND u.password = $2
-    `;
-    const result = await pool.query(query, [correo, password]);
 
-    if (result.rows.length > 0) {
-      
-      res.json(result.rows[0]);
-    } else {
-      res.status(401).json({ error: 'Correo o contraseña incorrectos' });
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  const CORREO_VALIDO = "felipe@test.com";
+  const PASSWORD_VALIDA = "123";
+
+  if (correo === CORREO_VALIDO && password === PASSWORD_VALIDA) {
+    
+    
+    const usuarioSimulado = {
+      id: "1",
+      nombre: "Felipe Gonzales",
+      correo: correo,
+      rol: "Administrador",
+      empresa: "Empresa Demo",
+      faena: "Faena Principal",
+      activo: true
+    };
+
+    return res.status(200).json(usuarioSimulado);
+  } else {
+    
+    return res.status(401).json({ error: "Correo o contraseña incorrectos" });
   }
 });
 
@@ -53,7 +63,6 @@ app.get('/v1/incidentes', async (req, res) => {
       evidencias: []
     }));
 
-    console.log("RUTA TEST ACTIVA");
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
